@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
 
-class LoginRequest extends FormRequest
+class ResetPasswordRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,16 +24,20 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email|string',
-            'password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+            'email' => 'required|string|email',
+
         ];
     }
-    public function messages()
+
+    public function messages(): array
     {
         return [
+            'password.required' => 'Password wajib diisi',
+            'password.min' => 'Password harus terdiri dari minimal 8 karakter',
+            'password.confirmed' => 'Konfirmasi password tidak cocok',
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Email tidak valid',
-            'password.required' => 'Password wajib diisi',
         ];
     }
 

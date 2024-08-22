@@ -1,26 +1,23 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
-use App\Models\RefreshToken;
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\Services\TokenService;
 use App\Models\SocialLogin;
 use App\Models\User;
-use App\Services\TokenService;
-use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Str;
 
 class SocialLoginController extends Controller
 {
-    protected $tokenService;
 
-    public function __construct(TokenService $tokenService)
-    {
-        $this->tokenService = $tokenService;
-    }
+    public function __construct(protected TokenService $tokenService) {}
+
     public function toProvider($driver)
     {
-        return Socialite::driver($driver)->stateless()->redirect();
+        return response()->json([
+            'url' => Socialite::driver($driver)->stateless()->redirect()->getTargetUrl()
+        ]);
     }
 
     public function handleCallback($driver)
@@ -38,8 +35,15 @@ class SocialLoginController extends Controller
                 $dbUser = User::create([
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
-                    'password' => bcrypt(rand(1000, 9999))
+                    'email_verified_at' => now(),
+                    'password' => null
                 ]);
+            } else {
+                // Jika pengguna ditemukan tetapi belum diverifikasi, verifikasi emailnya
+                if (is_null($dbUser->email_verified_at)) {
+                    $dbUser->email_verified_at = now();
+                    $dbUser->save();
+                }
             }
 
             SocialLogin::create([

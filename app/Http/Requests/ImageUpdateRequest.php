@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
 
-class LoginRequest extends FormRequest
+class ImageUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,19 +24,19 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email|string',
-            'password' => 'required|string',
-        ];
-    }
-    public function messages()
-    {
-        return [
-            'email.required' => 'Email wajib diisi',
-            'email.email' => 'Email tidak valid',
-            'password.required' => 'Password wajib diisi',
+            'profilepict' => 'required|image|mimes:jpg,png,jpeg,webp|max:5120',
         ];
     }
 
+    public function messages()
+    {
+        return [
+            'profilepict.required' => 'Foto profil wajib diunggah',
+            'profilepict.image' => 'Foto profil harus berupa gambar',
+            'profilepict.mimes' => 'Foto profil harus memiliki format jpg, png, jpeg, atau webp',
+            'profilepict.max' => 'Foto profil tidak boleh lebih dari 5 MB',
+        ];
+    }
     protected function failedValidation(Validator $validator)
     {
         $errors = $validator->errors();

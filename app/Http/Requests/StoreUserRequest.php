@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\ValidationException;
 
 class StoreUserRequest extends FormRequest
 {
@@ -22,15 +24,19 @@ class StoreUserRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed', // Gunakan konfirmasi password
+            'username' => 'required|string|unique:users',
+            'profilepict' => 'required|image|mimes:jpg,png,jpeg,webp|max:5120',
+            'name' => 'required|string',
+            'email' => 'required|string|email:filter|unique:users',
+            'password' => 'required|string|min:8|confirmed',
         ];
     }
 
     public function messages()
     {
         return [
+            'username.required' => 'Username wajib diisi',
+            'username.unique' => 'Username sudah ada',
             'name.required' => 'Nama wajib diisi',
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Email tidak valid',
@@ -38,6 +44,17 @@ class StoreUserRequest extends FormRequest
             'password.required' => 'Password wajib diisi',
             'password.min' => 'Password harus terdiri dari minimal 8 karakter',
             'password.confirmed' => 'Konfirmasi password tidak cocok',
+            'profilepict.required' => 'Foto profil wajib diunggah',
+            'profilepict.image' => 'Foto profil harus berupa gambar',
+            'profilepict.mimes' => 'Foto profil harus memiliki format jpg, png, jpeg, atau webp',
+            'profilepict.max' => 'Foto profil tidak boleh lebih dari 5 MB',
         ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors();
+
+        throw new ValidationException($validator, response()->json($errors, 0));
     }
 }
