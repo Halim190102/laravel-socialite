@@ -38,7 +38,7 @@ class ResetPasswordNotification extends Notification
             ->greeting("Hello!, {$notifiable->name}")
             ->line('You are receiving this email because we received a password reset request for your account.')
             ->line('Your password reset code is:')
-            ->line($this->code)
+            ->line(new HtmlString('<div style="text-align: center; font-weight: bold; font-size: 32px; color: #000; letter-spacing: 10px; padding: 20px 0;">' . $this->code . '</div>'))
             ->line('If you did not request a password reset, no further action is required.')
             ->salutation('Regards, The Team');
     }

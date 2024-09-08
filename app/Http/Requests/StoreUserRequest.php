@@ -55,6 +55,9 @@ class StoreUserRequest extends FormRequest
     {
         $errors = $validator->errors();
 
-        throw new ValidationException($validator, response()->json($errors, 0));
+        throw new ValidationException($validator, response()->json([
+            'status' => 'failed',
+            'error' => $errors,
+        ]));
     }
 }

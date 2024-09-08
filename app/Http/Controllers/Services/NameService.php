@@ -6,31 +6,43 @@ class NameService
 {
     public function changeUsername($username)
     {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        $user->username = $username;
-        $user->save();
+            $user->username = $username;
+            $user->save();
 
-        return response()->json([
-            'type' => 1,
-            'status' => 'success',
-            'message' => 'Username updated successfully',
-            'data' => $user
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Username updated successfully',
+                'data' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Failed to update username',
+            ]);
+        }
     }
 
     public function changeName($name)
     {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        $user->name = $name;
-        $user->save();
+            $user->name = $name;
+            $user->save();
 
-        return response()->json([
-            'type' => 1,
-            'status' => 'success',
-            'message' => 'Name updated successfully',
-            'data' => $user
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Name updated successfully',
+                'data' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Failed to update name',
+            ]);
+        }
     }
 }

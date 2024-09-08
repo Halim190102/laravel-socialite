@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Services;
 
+use App\Models\RefreshToken;
 use App\Models\ResetPassword;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
@@ -20,16 +21,14 @@ class ResetPasswordService
 
         if (!$resetRequest) {
             return response()->json([
-                'type' => 2,
-                'status' => 'error',
+                'status' => 'failed',
                 'message' => 'Invalid email or reset code'
             ]);
         }
 
         if ($resetRequest->expired_at < now()) {
             return response()->json([
-                'type' => 3,
-                'status' => 'error',
+                'status' => 'failed',
                 'message' => 'Reset code has expired'
             ]);
         }
@@ -38,7 +37,6 @@ class ResetPasswordService
         $resetRequest->save();
 
         return response()->json([
-            'type' => 1,
             'status' => 'success',
             'message' => 'Reset code verified successfully'
         ]);
@@ -51,8 +49,7 @@ class ResetPasswordService
 
         if (!$check || !$user) {
             return response()->json([
-                'type' => 3,
-                'status' => 'error',
+                'status' => 'failed',
                 'message' => 'Invalid email or reset request'
             ]);
         }
@@ -61,16 +58,16 @@ class ResetPasswordService
             $user->password = bcrypt($data['password']);
             $user->save();
             $check->delete();
-
+            RefreshToken::where('user_id', $user->id)->delete();
+            $token = auth()->fromUser($user);
+            auth()->setToken($token)->invalidate(true);
             return response()->json([
-                'type' => 1,
                 'status' => 'success',
-                'message' => 'Reset password immediately'
+                'message' => 'Reset password success'
             ]);
         } else {
             return response()->json([
-                'type' => 2,
-                'status' => 'error',
+                'status' => 'failed',
                 'message' => 'Please verify the reset code first'
             ]);
         }
@@ -89,7 +86,7 @@ class ResetPasswordService
             "email" => $email,
             "code" => $code,
             "reset" => false,
-            "expired_at" => now()->addMinutes(5),
+            "expired_at" => now()->addMinutes(1),
         ]);
 
         if ($saveToken) {

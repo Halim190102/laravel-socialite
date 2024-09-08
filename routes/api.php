@@ -24,13 +24,15 @@ Route::group([
     Route::post('/check_verify_email', [UserDataController::class, 'checkVerify'])->name('checkVerify');
     Route::post('/send_reset_code', [UserDataController::class, 'sendCodeLink'])->name('sendCodeLink');
     Route::post('/check_code_verify', [UserDataController::class, 'checkCodeVerify'])->name('checkCodeVerify');
-    Route::post('/reset_password', [UserDataController::class, 'resetPassword'])->name('resetPassword');
+    Route::post('/reset', [UserDataController::class, 'resetPassword'])->name('resetPassword');
 
     Route::get('/auth/{driver}', [SocialLoginController::class, 'toProvider'])->where('driver', 'github|google|facebook');
     Route::get('/callback/{driver}/login', [SocialLoginController::class, 'handleCallback'])->where('driver', 'github|google|facebook');
 
     Route::middleware('auth:api')->group(function () {
-        Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('/logout_all', [AuthController::class, 'revokeAllTokens'])->name('revokeAllTokens');
+
         Route::get('/me', [AuthController::class, 'me'])->name('me');
 
         Route::post('/change_password', [UserDataController::class, 'changeUserPassword'])->name('changeUserPassword');

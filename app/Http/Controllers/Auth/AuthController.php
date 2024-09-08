@@ -28,6 +28,7 @@ class AuthController extends Controller
 
     public function register(StoreUserRequest $request)
     {
+
         $picture = $this->imageService->postImage($request['profilepict']);
 
         $user = User::create([
@@ -40,9 +41,8 @@ class AuthController extends Controller
         if ($user) {
             $this->emailVerifiedService->sendVerificationlink($user);
             return response()->json([
-                'type' => 1,
                 'status' => 'success',
-                'message' => 'User registered successfully',
+                'message' => 'Register successfully, please verify your email',
                 'data' => $user
             ]);
         }
@@ -54,26 +54,16 @@ class AuthController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        if (!$user) {
-            return response()->json([
-                'type' => 4,
-                'status' => 'error',
-                'message' => 'User not found'
-            ]);
-        }
-
         if (!$user->email_verified_at) {
             return response()->json([
-                'type' => 3,
-                'status' => 'error',
+                'status' => 'failed',
                 'message' => 'Email not verified'
             ]);
         }
 
         if (!$token = auth()->attempt($credentials)) {
             return response()->json([
-                'type' => 2,
-                'status' => 'error',
+                'status' => 'failed',
                 'message' => 'Invalid email or password'
             ]);
         }
@@ -83,56 +73,77 @@ class AuthController extends Controller
 
     public function me()
     {
-        return response()->json([
-            'type' => 1,
-            'status' => 'success',
-            'data' => auth()->user()
-        ]);
+        try {
+            return response()->json([
+                'status' => 'success',
+                'data' => auth()->user()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Failed to get data'
+            ]);
+        }
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        auth()->logout();
+        $storedToken = RefreshToken::where('token', hex2bin(base64_decode($request['refresh_token'])))->first();
 
-        return response()->json([
-            'type' => 1,
-            'status' => 'success',
-            'message' => 'Logged out successfully'
-        ]);
+        try {
+            $storedToken->delete();
+            auth()->logout(true);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Logged out successfully'
+            ]);
+        } catch (\Exception $e) {
+            $storedToken->delete();
+
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Failed to revoke tokens'
+            ]);
+        }
     }
 
     public function refresh(Request $request)
     {
-        $refreshToken = $request->input('refresh_token');
-
-        $storedToken = RefreshToken::where('token', hex2bin(base64_decode($refreshToken)))->first();
-
-        if (!$storedToken || $storedToken->revoked || $storedToken->expires_at->isPast()) {
-            if ($storedToken) {
-                $storedToken->delete();
-                return response()->json([
-                    'type' => 2,
-                    'status' => 'error',
-                    'message' => 'Refresh token is invalid or has expired'
-                ]);
-            } else {
-                return response()->json([
-                    'type' => 3,
-                    'status' => 'error',
-                    'message' => 'Refresh token is missing'
-                ]);
-            }
+        $storedToken = RefreshToken::where('token', hex2bin(base64_decode($request['refresh_token'])))->first();
+        if (!$storedToken) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Refresh token is missing'
+            ]);
         }
-
         try {
-            $newAccessToken = auth()->refresh();
+            $newAccessToken = auth()->refresh(true);
 
             return $this->tokenService->respondWithToken($newAccessToken, $storedToken);
         } catch (\Exception $e) {
+            $storedToken->delete();
+
             return response()->json([
-                'type' => 0,
-                'status' => 'error',
-                'message' => 'Access token tidak valid'
+                'status' => 'failed',
+                'message' => 'Failed to refresh tokens'
+            ]);
+        }
+    }
+
+    public function revokeAllTokens()
+    {
+        try {
+            RefreshToken::where('user_id', auth()->id())->delete();
+            auth()->invalidate(true);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'All tokens revoked successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Failed to revoke tokens'
             ]);
         }
     }

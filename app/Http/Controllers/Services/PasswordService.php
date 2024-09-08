@@ -11,7 +11,7 @@ class PasswordService
     {
         if (!password_verify($current_password, auth()->user()->password)) {
             return response()->json([
-                'type' => 2,
+
                 'status' => 'error',
                 'message' => 'Password did not match the current password'
             ]);
@@ -20,22 +20,30 @@ class PasswordService
 
     public function changePassword($data)
     {
-        $this->validateCurrentPassword($data['current_password']);
-        $updatePassword = auth()->user()->update([
-            'password' => Hash::make($data['password'])
-        ]);
-
-        if ($updatePassword) {
-            return response()->json([
-                'type' => 1,
-                'status' => 'success',
-                'message' => 'Password updated successfully'
+        try {
+            $this->validateCurrentPassword($data['current_password']);
+            $updatePassword = auth()->user()->update([
+                'password' => Hash::make($data['password'])
             ]);
-        } else {
+
+            if ($updatePassword) {
+                return response()->json([
+
+                    'status' => 'success',
+                    'message' => 'Password updated successfully'
+                ]);
+            } else {
+                return response()->json([
+
+                    'status' => 'error',
+                    'message' => 'An error occurred while updating the password'
+                ]);
+            }
+        } catch (\Exception $e) {
             return response()->json([
-                'type' => 3,
+
                 'status' => 'error',
-                'message' => 'An error occurred while updating the password'
+                'message' => 'Failed to change password',
             ]);
         }
     }

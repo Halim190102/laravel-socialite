@@ -36,18 +36,21 @@ class UserDataController extends Controller
         switch ($verificationStatus) {
             case 'success':
                 return view('verify')->with(['status' => 'success']);
+                break;
             case 'invalid':
                 return view('verify')->with(['status' => 'invalid']);
-
+                break;
             case 'already_verified':
                 return view('verify')->with([
                     'status' => 'already_verified',
                 ]);
+                break;
             case 'expired':
                 return view('verify')->with([
                     'status' => 'token_expired',
                     'email' => $email,
                 ]);
+                break;
             default:
                 return view('verify')->with('status', 'error');
         }
@@ -64,13 +67,11 @@ class UserDataController extends Controller
 
         if ($user && $user->email_verified_at) {
             return response()->json([
-                'type' => 1,
                 'status' => 'success',
                 'message' => 'Email has already been verified'
             ]);
         } else {
             return response()->json([
-                'type' => 2,
                 'status' => 'failed',
                 'message' => 'Email has not been verified'
             ]);
@@ -99,14 +100,20 @@ class UserDataController extends Controller
 
     public function sendCodeLink(SendCodeLinkRequest $request)
     {
-        $user = User::where('email', $request->email)->firstOrFail();
-        $this->resetPasswordService->sendVerificationlink($user);
+        $user = User::where('email', $request->email)->first();
 
-        return response()->json([
-            'type' => 1,
-            'status' => 'success',
-            'message' => 'Verification link sent'
-        ]);
+        if ($user) {
+            $this->resetPasswordService->sendVerificationlink($user);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Verification code has been send'
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'User not found'
+            ]);
+        }
     }
 
     public function checkCodeVerify(VerifyResetPasswordRequest $request)

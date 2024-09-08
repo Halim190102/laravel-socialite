@@ -33,6 +33,8 @@ class SocialLoginController extends Controller
 
             if (!$dbUser) {
                 $dbUser = User::create([
+                    'profilepict' => $user->getAvatar(),
+                    'username' => $user->getNickname(),
                     'name' => $user->getName(),
                     'email' => $user->getEmail(),
                     'email_verified_at' => now(),

@@ -21,7 +21,6 @@ class EmailVerificationService
 
         $this->sendVerificationlink($user);
         return response()->json([
-            'type' => 1,
             'status' => 'success',
             'message' => 'Email verification link has been send'
         ]);
